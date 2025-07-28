@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進銷存管理系統</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <h2>進銷存管理系統</h2>
+                <span id="gas-status" class="gas-status offline">離線模式</span>
+            </div>
+            <div class="navbar-menu">
+                <button class="nav-item active" data-page="dashboard">首頁</button>
+                <button class="nav-item" data-page="products">商品管理</button>
+                <button class="nav-item" data-page="locations">地點管理</button>
+                <button class="nav-item" data-page="stock-in">進貨管理</button>
+                <button class="nav-item" data-page="stock-out">出貨管理</button>
+                <button class="nav-item" data-page="inventory">庫存查詢</button>
+                <button class="nav-item" data-page="records">異動記錄</button>
+                <button class="nav-item" data-page="settings">設定</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要內容區域 -->
+    <main class="container main-content">
+        <!-- 首頁 -->
+        <div id="dashboard" class="page active">
+            <div class="page-header">
+                <h1>系統總覽</h1>
+                <p>查看庫存狀況和最近異動記錄</p>
+                <div class="header-actions">
+                    <button class="btn btn--secondary" id="sync-all-data">同步所有資料</button>
+                </div>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card__body">
+                        <h3>總商品數量</h3>
+                        <div class="stat-number" id="total-products">0</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card__body">
+                        <h3>存放地點</h3>
+                        <div class="stat-number" id="total-locations">0</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card__body">
+                        <h3>總庫存數量</h3>
+                        <div class="stat-number" id="total-inventory">計算中</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card__body">
+                        <h3>今日異動</h3>
+                        <div class="stat-number" id="today-transactions">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="dashboard-section">
+                    <h3>庫存不足警告</h3>
+                    <div id="low-stock-alerts" class="alert-list"></div>
+                </div>
+                
+                <div class="dashboard-section">
+                    <h3>最近異動記錄</h3>
+                    <div id="recent-records" class="records-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 商品管理 -->
+        <div id="products" class="page">
+            <div class="page-header">
+                <h1>商品管理</h1>
+                <div class="header-actions">
+                    <button class="btn btn--outline" id="sync-products">同步商品</button>
+                    <button class="btn btn--primary" id="add-product-btn">新增商品</button>
+                </div>
+            </div>
+            
+            <div class="search-bar">
+                <input type="text" class="form-control" id="product-search" placeholder="搜尋商品名稱或編號...">
+            </div>
+            
+            <div class="table-container">
+                <table class="data-table" id="products-table">
+                    <thead>
+                        <tr>
+                            <th>商品編號</th>
+                            <th>商品名稱</th>
+                            <th>描述</th>
+                            <th>單位</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 地點管理 -->
+        <div id="locations" class="page">
+            <div class="page-header">
+                <h1>地點管理</h1>
+                <div class="header-actions">
+                    <button class="btn btn--outline" id="sync-locations">同步地點</button>
+                    <button class="btn btn--primary" id="add-location-btn">新增地點</button>
+                </div>
+            </div>
+            
+            <div class="search-bar">
+                <input type="text" class="form-control" id="location-search" placeholder="搜尋地點名稱...">
+            </div>
+            
+            <div class="table-container">
+                <table class="data-table" id="locations-table">
+                    <thead>
+                        <tr>
+                            <th>地點編號</th>
+                            <th>地點名稱</th>
+                            <th>地址</th>
+                            <th>描述</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 進貨管理 -->
+        <div id="stock-in" class="page">
+            <div class="page-header">
+                <h1>進貨管理</h1>
+            </div>
+            
+            <div class="form-section">
+                <div class="card">
+                    <div class="card__body">
+                        <h3>快速進貨</h3>
+                        <form id="quick-stock-in-form" class="quick-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">地點</label>
+                                    <select class="form-control" id="stock-in-location" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">商品</label>
+                                    <select class="form-control" id="stock-in-product" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">數量</label>
+                                    <input type="number" class="form-control" id="stock-in-quantity" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">備註</label>
+                                    <input type="text" class="form-control" id="stock-in-note" placeholder="進貨備註">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">操作員</label>
+                                    <input type="text" class="form-control" id="stock-in-operator" placeholder="操作員名稱">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn--primary">確認進貨</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 出貨管理 -->
+        <div id="stock-out" class="page">
+            <div class="page-header">
+                <h1>出貨管理</h1>
+            </div>
+            
+            <div class="form-section">
+                <div class="card">
+                    <div class="card__body">
+                        <h3>快速出貨</h3>
+                        <form id="quick-stock-out-form" class="quick-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">地點</label>
+                                    <select class="form-control" id="stock-out-location" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">商品</label>
+                                    <select class="form-control" id="stock-out-product" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">數量</label>
+                                    <input type="number" class="form-control" id="stock-out-quantity" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">備註</label>
+                                    <input type="text" class="form-control" id="stock-out-note" placeholder="出貨備註">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">操作員</label>
+                                    <input type="text" class="form-control" id="stock-out-operator" placeholder="操作員名稱">
+                                </div>
+                            </div>
+                            <div id="stock-availability" class="stock-info"></div>
+                            <button type="submit" class="btn btn--primary">確認出貨</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 庫存查詢 -->
+        <div id="inventory" class="page">
+            <div class="page-header">
+                <h1>庫存查詢</h1>
+                <div class="header-actions">
+                    <button class="btn btn--outline" id="sync-inventory">同步庫存</button>
+                    <button class="btn btn--secondary" id="export-inventory-btn">匯出Excel</button>
+                    <button class="btn btn--outline" id="print-inventory-btn">列印</button>
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-row">
+                    <select class="form-control" id="inventory-location-filter">
+                        <option value="">所有地點</option>
+                    </select>
+                    <select class="form-control" id="inventory-product-filter">
+                        <option value="">所有商品</option>
+                    </select>
+                    <button class="btn btn--secondary" id="apply-inventory-filter">篩選</button>
+                    <button class="btn btn--outline" id="clear-inventory-filter">清除</button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="data-table" id="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>地點</th>
+                            <th>商品名稱</th>
+                            <th>商品編號</th>
+                            <th>現有庫存</th>
+                            <th>單位</th>
+                            <th>狀態</th>
+                            <th>最後更新</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 異動記錄 -->
+        <div id="records" class="page">
+            <div class="page-header">
+                <h1>異動記錄</h1>
+                <div class="header-actions">
+                    <button class="btn btn--outline" id="sync-records">同步記錄</button>
+                    <button class="btn btn--secondary" id="export-records-btn">匯出Excel</button>
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-row">
+                    <select class="form-control" id="record-type-filter">
+                        <option value="">所有類型</option>
+                        <option value="in">進貨</option>
+                        <option value="out">出貨</option>
+                    </select>
+                    <input type="date" class="form-control" id="record-date-from">
+                    <input type="date" class="form-control" id="record-date-to">
+                    <button class="btn btn--secondary" id="apply-record-filter">篩選</button>
+                    <button class="btn btn--outline" id="clear-record-filter">清除</button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="data-table" id="records-table">
+                    <thead>
+                        <tr>
+                            <th>時間</th>
+                            <th>類型</th>
+                            <th>地點</th>
+                            <th>商品</th>
+                            <th>數量</th>
+                            <th>操作員</th>
+                            <th>備註</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 設定 -->
+        <div id="settings" class="page">
+            <div class="page-header">
+                <h1>系統設定</h1>
+            </div>
+            
+            <div class="settings-content">
+                <div class="card">
+                    <div class="card__body">
+                        <h3>Google Apps Script 整合</h3>
+                        <div class="form-group">
+                            <label class="form-label">GAS Web App URL</label>
+                            <input type="url" class="form-control" id="gas-url" placeholder="https://script.google.com/macros/s/...">
+                            <small>請輸入您的Google Apps Script Web App URL</small>
+                        </div>
+                        <div class="settings-section">
+                            <button class="btn btn--primary" id="test-gas-connection">測試連接</button>
+                            <button class="btn btn--secondary" id="save-gas-settings">儲存設定</button>
+                        </div>
+                        <div id="gas-connection-status" class="connection-status"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card__body">
+                        <h3>資料同步設定</h3>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="auto-sync-enabled"> 
+                                啟用自動同步
+                            </label>
+                            <small>當啟用時，每次資料異動後會自動同步到Google Sheets</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">同步間隔 (分鐘)</label>
+                            <input type="number" class="form-control" id="sync-interval" value="5" min="1">
+                        </div>
+                        <div class="settings-section">
+                            <button class="btn btn--primary" id="manual-sync-all">立即同步所有資料</button>
+                            <button class="btn btn--outline" id="pull-from-gas">從雲端拉取資料</button>
+                        </div>
+                        <div id="last-sync-time" class="sync-status"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card__body">
+                        <h3>資料管理</h3>
+                        <div class="settings-section">
+                            <button class="btn btn--outline" id="backup-data-btn">備份資料</button>
+                            <button class="btn btn--outline" id="restore-data-btn">還原資料</button>
+                            <button class="btn btn--secondary" id="clear-data-btn">清除所有資料</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card__body">
+                        <h3>庫存警告設定</h3>
+                        <div class="form-group">
+                            <label class="form-label">庫存不足警告數量</label>
+                            <input type="number" class="form-control" id="low-stock-threshold" value="5" min="0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card__body">
+                        <h3>Google Apps Script 設定指南</h3>
+                        <div class="setup-guide">
+                            <h4>設定步驟：</h4>
+                            <ol>
+                                <li>開啟 <a href="https://script.google.com" target="_blank">Google Apps Script</a></li>
+                                <li>建立新專案並貼上提供的程式碼</li>
+                                <li>部署為 Web App，權限設定為「任何人」</li>
+                                <li>複製 Web App URL 並貼上到上方設定欄位</li>
+                                <li>測試連接確認設定正確</li>
+                            </ol>
+                            <p><strong>重要：</strong>系統使用最佳實踐避免CORS問題，不會觸發OPTIONS預檢請求。</p>
+                            <button class="btn btn--outline" id="show-gas-code">查看 GAS 程式碼</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 模態對話框 -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">標題</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+            <div class="modal-footer">
+                <button class="btn btn--outline" id="modal-cancel">取消</button>
+                <button class="btn btn--primary" id="modal-confirm">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知訊息 -->
+    <div id="notification" class="notification hidden">
+        <div class="notification-content">
+            <span id="notification-message"></span>
+            <button id="notification-close">&times;</button>
+        </div>
+    </div>
+
+    <!-- 載入指示器 -->
+    <div id="loading" class="loading hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在同步資料...</div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
